@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "react-router-dom";
 import { MadeWithDyad } from "@/components/made-with-dyad";
-import { ArrowRight, Wallet, TrendingUp, ListChecks, Settings } from "lucide-react";
+import { ArrowRight, Wallet, TrendingUp, ListChecks, Settings, ShoppingCart } from "lucide-react"; // Importar ShoppingCart
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import { showError } from "@/utils/toast";
@@ -278,6 +278,11 @@ const Dashboard = () => {
         <Link to="/categories">
           <Button variant="outline" className="w-full border-blue-600 text-blue-600 hover:bg-blue-50 py-6 text-lg shadow-md flex items-center justify-center">
             Gerenciar Categorias <ArrowRight className="ml-2 h-5 w-5" />
+          </Button>
+        </Link>
+        <Link to="/monthly-grocery"> {/* Novo link para a Feira do Mês */}
+          <Button variant="outline" className="w-full border-blue-600 text-blue-600 hover:bg-blue-50 py-6 text-lg shadow-md flex items-center justify-center">
+            Feira do Mês <ShoppingCart className="ml-2 h-5 w-5" />
           </Button>
         </Link>
         <Link to="/profile">

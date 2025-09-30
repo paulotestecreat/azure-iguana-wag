@@ -9,6 +9,7 @@ import RegisterTransaction from "./pages/RegisterTransaction";
 import Transactions from "./pages/Transactions";
 import Categories from "./pages/Categories";
 import Profile from "./pages/Profile";
+import MonthlyGrocery from "./pages/MonthlyGrocery"; // Importar a nova página
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import { useSupabaseAuth } from "./integrations/supabase/supabaseAuth";
@@ -47,6 +48,7 @@ const App = () => (
           <Route path="/transactions" element={<ProtectedRoute><Transactions /></ProtectedRoute>} />
           <Route path="/categories" element={<ProtectedRoute><Categories /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+          <Route path="/monthly-grocery" element={<ProtectedRoute><MonthlyGrocery /></ProtectedRoute>} /> {/* Nova rota */}
           {/* ADICIONE TODAS AS ROTAS PERSONALIZADAS ACIMA DA ROTA CATCH-ALL "*" */}
           <Route path="*" element={<NotFound />} />
         </Routes>
