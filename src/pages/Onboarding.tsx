@@ -2,30 +2,21 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Link, useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import { useState } from "react";
 import { showSuccess, showError } from "@/utils/toast";
 import { supabase } from "@/integrations/supabase/client";
-import { useSupabaseAuth } from "@/integrations/supabase/supabaseAuth"; // Import useSupabaseAuth
 
 const Onboarding = () => {
-  const { user, loading } = useSupabaseAuth(); // Use the auth hook
   const [whatsappNumber, setWhatsappNumber] = useState("");
-  const [connectLoading, setConnectLoading] = useState(false);
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    if (!loading && !user) {
-      navigate('/login'); // Redirect to login if not authenticated
-    }
-  }, [user, loading, navigate]);
+  const [loading, setLoading] = useState(false);
 
   const handleConnectWhatsapp = async () => {
-    setConnectLoading(true);
+    setLoading(true);
     try {
+      const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         showError("Você precisa estar logado para conectar o WhatsApp.");
-        navigate('/login');
         return;
       }
 
@@ -39,21 +30,13 @@ const Onboarding = () => {
       }
 
       showSuccess("Número do WhatsApp conectado com sucesso! Você receberá uma mensagem de boas-vindas.");
-      navigate('/dashboard'); // Redirect to dashboard after connecting WhatsApp
+      // In a real app, trigger a WhatsApp message here
     } catch (error: any) {
       showError(`Erro ao conectar WhatsApp: ${error.message}`);
     } finally {
-      setConnectLoading(false);
+      setLoading(false);
     }
   };
-
-  if (loading || !user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-        <p className="text-gray-700">Carregando...</p>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
@@ -79,8 +62,8 @@ const Onboarding = () => {
               onChange={(e) => setWhatsappNumber(e.target.value)}
               className="mt-1"
             />
-            <Button onClick={handleConnectWhatsapp} disabled={connectLoading || !whatsappNumber} className="w-full bg-green-600 hover:bg-green-700 text-white">
-              {connectLoading ? "Conectando..." : "Conectar WhatsApp"}
+            <Button onClick={handleConnectWhatsapp} disabled={loading || !whatsappNumber} className="w-full bg-green-600 hover:bg-green-700 text-white">
+              {loading ? "Conectando..." : "Conectar WhatsApp"}
             </Button>
           </div>
 

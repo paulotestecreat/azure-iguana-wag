@@ -1,16 +1,14 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { MadeWithDyad } from "@/components/made-with-dyad";
-import { ArrowRight, Wallet, TrendingUp, Target, Scale, LogOut } from "lucide-react";
+import { ArrowRight, Wallet, TrendingUp, Target, Scale } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
-import { showError, showSuccess } from "@/utils/toast";
-import { useSupabaseAuth } from "@/integrations/supabase/supabaseAuth";
+import { showError } from "@/utils/toast";
 
 interface DashboardData {
   totalSpent: number;
-  monthlyBudget: number; // Adicionado
   remainingBudget: number;
   transactionsCount: number;
   goalsCount: number;
@@ -18,32 +16,18 @@ interface DashboardData {
 }
 
 const Dashboard = () => {
-  const { user, loading: authLoading } = useSupabaseAuth();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchDashboardData = async () => {
-      if (authLoading) return;
-
-      if (!user) {
-        navigate('/login');
-        return;
-      }
-
       setLoading(true);
       try {
-        // Fetch user profile to get monthly_budget
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select('monthly_budget')
-          .eq('id', user.id)
-          .single();
-
-        if (profileError) throw profileError;
-
-        const monthlyBudget = profileData?.monthly_budget || 0;
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          showError("Usuário não autenticado.");
+          return;
+        }
 
         // Fetch total spent this month
         const { data: transactionsData, error: transactionsError } = await supabase
@@ -57,9 +41,6 @@ const Dashboard = () => {
 
         const totalSpent = transactionsData.reduce((sum, t) => sum + t.amount, 0);
         const transactionsCount = transactionsData.length;
-
-        // Calculate remaining budget
-        const remainingBudget = monthlyBudget - totalSpent;
 
         // Fetch goals count
         const { count: goalsCount, error: goalsError } = await supabase
@@ -79,9 +60,11 @@ const Dashboard = () => {
 
         if (debtsError) throw debtsError;
 
+        // Placeholder for remaining budget (needs a budget feature)
+        const remainingBudget = 0; // TODO: Implement budget logic
+
         setData({
           totalSpent,
-          monthlyBudget,
           remainingBudget,
           transactionsCount,
           goalsCount: goalsCount || 0,
@@ -96,22 +79,9 @@ const Dashboard = () => {
     };
 
     fetchDashboardData();
-  }, [user, authLoading, navigate]);
+  }, []);
 
-  const handleLogout = async () => {
-    try {
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        throw error;
-      }
-      showSuccess("Você foi desconectado com sucesso!");
-      navigate('/login');
-    } catch (error: any) {
-      showError(`Erro ao fazer logout: ${error.message}`);
-    }
-  };
-
-  if (loading || authLoading) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
         <p className="text-gray-700">Carregando painel...</p>
@@ -142,28 +112,13 @@ const Dashboard = () => {
 
         <Card className="shadow-md">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Orçamento Mensal</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">R$ {data?.monthlyBudget.toFixed(2) || '0.00'}</div>
-            <p className="text-xs text-muted-foreground">
-              Seu limite de gastos para o mês
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-md">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Orçamento Restante</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className={`text-2xl font-bold ${data && data.remainingBudget < 0 ? 'text-red-600' : 'text-green-600'}`}>
-              R$ {data?.remainingBudget.toFixed(2) || '0.00'}
-            </div>
+            <div className="text-2xl font-bold">R$ {data?.remainingBudget.toFixed(2) || '0.00'}</div>
             <p className="text-xs text-muted-foreground">
-              Valor disponível para gastar
+              Baseado no seu orçamento mensal
             </p>
           </CardContent>
         </Card>
@@ -216,9 +171,6 @@ const Dashboard = () => {
             Meu Perfil e Limites <ArrowRight className="ml-2 h-5 w-5" />
           </Button>
         </Link>
-        <Button onClick={handleLogout} className="w-full bg-red-600 hover:bg-red-700 text-white py-6 text-lg shadow-md flex items-center justify-center col-span-full">
-          Sair <LogOut className="ml-2 h-5 w-5" />
-        </Button>
       </nav>
       <MadeWithDyad />
     </div>
