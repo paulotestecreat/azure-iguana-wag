@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } = "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Link, useNavigate } from "react-router-dom";
@@ -8,7 +8,7 @@ import { showSuccess, showError } from "@/utils/toast";
 import { supabase } from "@/integrations/supabase/client";
 import { MadeWithDyad } from "@/components/made-with-dyad";
 import { useSupabaseAuth } from "@/integrations/supabase/supabaseAuth";
-import { LogOut } from "lucide-react"; // Importar o ícone de logout
+import { LogOut } from "lucide-react";
 
 interface UserProfile {
   first_name: string;
@@ -16,6 +16,7 @@ interface UserProfile {
   whatsapp_number: string;
   monthly_transaction_limit: number;
   transactions_this_month: number;
+  monthly_budget: number; // Adicionado
 }
 
 const ProfileLimits = () => {
@@ -25,6 +26,7 @@ const ProfileLimits = () => {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [whatsappNumber, setWhatsappNumber] = useState("");
+  const [monthlyBudget, setMonthlyBudget] = useState(""); // Adicionado
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const navigate = useNavigate();
@@ -42,7 +44,7 @@ const ProfileLimits = () => {
       try {
         const { data, error } = await supabase
           .from('profiles')
-          .select('first_name, last_name, whatsapp_number, monthly_transaction_limit, transactions_this_month')
+          .select('first_name, last_name, whatsapp_number, monthly_transaction_limit, transactions_this_month, monthly_budget') // Selecionar monthly_budget
           .eq('id', user.id)
           .single();
 
@@ -51,6 +53,7 @@ const ProfileLimits = () => {
         setFirstName(data.first_name || "");
         setLastName(data.last_name || "");
         setWhatsappNumber(data.whatsapp_number || "");
+        setMonthlyBudget(data.monthly_budget?.toString() || "0"); // Definir monthly_budget
       } catch (error: any) {
         showError(`Erro ao carregar perfil: ${error.message}`);
       } finally {
@@ -69,12 +72,19 @@ const ProfileLimits = () => {
         return;
       }
 
+      const parsedMonthlyBudget = parseFloat(monthlyBudget);
+      if (isNaN(parsedMonthlyBudget) || parsedMonthlyBudget < 0) {
+        showError("Por favor, insira um valor válido para o orçamento mensal.");
+        return;
+      }
+
       const { error } = await supabase
         .from('profiles')
         .update({
           first_name: firstName,
           last_name: lastName,
           whatsapp_number: whatsappNumber,
+          monthly_budget: parsedMonthlyBudget, // Atualizar monthly_budget
           updated_at: new Date().toISOString(),
         })
         .eq('id', user.id);
@@ -85,7 +95,7 @@ const ProfileLimits = () => {
       // Re-fetch to update local state
       const { data, error: refetchError } = await supabase
         .from('profiles')
-        .select('first_name, last_name, whatsapp_number, monthly_transaction_limit, transactions_this_month')
+        .select('first_name, last_name, whatsapp_number, monthly_transaction_limit, transactions_this_month, monthly_budget')
         .eq('id', user.id)
         .single();
       if (refetchError) throw refetchError;
@@ -105,7 +115,7 @@ const ProfileLimits = () => {
         throw error;
       }
       showSuccess("Você foi desconectado com sucesso!");
-      navigate('/login'); // Redirecionar para a página de login após o logout
+      navigate('/login');
     } catch (error: any) {
       showError(`Erro ao fazer logout: ${error.message}`);
     }
@@ -143,6 +153,10 @@ const ProfileLimits = () => {
             <div>
               <Label htmlFor="whatsappNumber">Número do WhatsApp</Label>
               <Input id="whatsappNumber" type="tel" value={whatsappNumber} onChange={(e) => setWhatsappNumber(e.target.value)} disabled={!isEditing} />
+            </div>
+            <div>
+              <Label htmlFor="monthlyBudget">Orçamento Mensal (R$)</Label>
+              <Input id="monthlyBudget" type="number" value={monthlyBudget} onChange={(e) => setMonthlyBudget(e.target.value)} disabled={!isEditing} />
             </div>
             {isEditing ? (
               <div className="flex space-x-2">

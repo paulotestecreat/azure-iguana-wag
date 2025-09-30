@@ -5,11 +5,12 @@ import { MadeWithDyad } from "@/components/made-with-dyad";
 import { ArrowRight, Wallet, TrendingUp, Target, Scale, LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
-import { showError, showSuccess } from "@/utils/toast"; // Importar showSuccess
+import { showError, showSuccess } from "@/utils/toast";
 import { useSupabaseAuth } from "@/integrations/supabase/supabaseAuth";
 
 interface DashboardData {
   totalSpent: number;
+  monthlyBudget: number; // Adicionado
   remainingBudget: number;
   transactionsCount: number;
   goalsCount: number;
@@ -24,15 +25,26 @@ const Dashboard = () => {
 
   useEffect(() => {
     const fetchDashboardData = async () => {
-      if (authLoading) return; // Wait for auth to load
+      if (authLoading) return;
 
       if (!user) {
-        navigate('/login'); // Redirect if not authenticated
+        navigate('/login');
         return;
       }
 
       setLoading(true);
       try {
+        // Fetch user profile to get monthly_budget
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('monthly_budget')
+          .eq('id', user.id)
+          .single();
+
+        if (profileError) throw profileError;
+
+        const monthlyBudget = profileData?.monthly_budget || 0;
+
         // Fetch total spent this month
         const { data: transactionsData, error: transactionsError } = await supabase
           .from('transactions')
@@ -45,6 +57,9 @@ const Dashboard = () => {
 
         const totalSpent = transactionsData.reduce((sum, t) => sum + t.amount, 0);
         const transactionsCount = transactionsData.length;
+
+        // Calculate remaining budget
+        const remainingBudget = monthlyBudget - totalSpent;
 
         // Fetch goals count
         const { count: goalsCount, error: goalsError } = await supabase
@@ -64,11 +79,9 @@ const Dashboard = () => {
 
         if (debtsError) throw debtsError;
 
-        // Placeholder for remaining budget (needs a budget feature)
-        const remainingBudget = 0; // TODO: Implement budget logic
-
         setData({
           totalSpent,
+          monthlyBudget,
           remainingBudget,
           transactionsCount,
           goalsCount: goalsCount || 0,
@@ -92,7 +105,7 @@ const Dashboard = () => {
         throw error;
       }
       showSuccess("Você foi desconectado com sucesso!");
-      navigate('/login'); // Redirecionar para a página de login após o logout
+      navigate('/login');
     } catch (error: any) {
       showError(`Erro ao fazer logout: ${error.message}`);
     }
@@ -129,13 +142,28 @@ const Dashboard = () => {
 
         <Card className="shadow-md">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Orçamento Mensal</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">R$ {data?.monthlyBudget.toFixed(2) || '0.00'}</div>
+            <p className="text-xs text-muted-foreground">
+              Seu limite de gastos para o mês
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-md">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Orçamento Restante</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">R$ {data?.remainingBudget.toFixed(2) || '0.00'}</div>
+            <div className={`text-2xl font-bold ${data && data.remainingBudget < 0 ? 'text-red-600' : 'text-green-600'}`}>
+              R$ {data?.remainingBudget.toFixed(2) || '0.00'}
+            </div>
             <p className="text-xs text-muted-foreground">
-              Baseado no seu orçamento mensal
+              Valor disponível para gastar
             </p>
           </CardContent>
         </Card>
