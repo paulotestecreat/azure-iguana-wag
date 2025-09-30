@@ -2,10 +2,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link, useNavigate } from "react-router-dom";
 import { MadeWithDyad } from "@/components/made-with-dyad";
-import { ArrowRight, Wallet, TrendingUp, Target, Scale } from "lucide-react";
+import { ArrowRight, Wallet, TrendingUp, Target, Scale, LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
-import { showError } from "@/utils/toast";
+import { showError, showSuccess } from "@/utils/toast"; // Importar showSuccess
 import { useSupabaseAuth } from "@/integrations/supabase/supabaseAuth";
 
 interface DashboardData {
@@ -84,6 +84,19 @@ const Dashboard = () => {
 
     fetchDashboardData();
   }, [user, authLoading, navigate]);
+
+  const handleLogout = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        throw error;
+      }
+      showSuccess("Você foi desconectado com sucesso!");
+      navigate('/login'); // Redirecionar para a página de login após o logout
+    } catch (error: any) {
+      showError(`Erro ao fazer logout: ${error.message}`);
+    }
+  };
 
   if (loading || authLoading) {
     return (
@@ -175,6 +188,9 @@ const Dashboard = () => {
             Meu Perfil e Limites <ArrowRight className="ml-2 h-5 w-5" />
           </Button>
         </Link>
+        <Button onClick={handleLogout} className="w-full bg-red-600 hover:bg-red-700 text-white py-6 text-lg shadow-md flex items-center justify-center col-span-full">
+          Sair <LogOut className="ml-2 h-5 w-5" />
+        </Button>
       </nav>
       <MadeWithDyad />
     </div>

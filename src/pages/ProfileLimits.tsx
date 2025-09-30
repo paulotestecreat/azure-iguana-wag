@@ -8,6 +8,7 @@ import { showSuccess, showError } from "@/utils/toast";
 import { supabase } from "@/integrations/supabase/client";
 import { MadeWithDyad } from "@/components/made-with-dyad";
 import { useSupabaseAuth } from "@/integrations/supabase/supabaseAuth";
+import { LogOut } from "lucide-react"; // Importar o ícone de logout
 
 interface UserProfile {
   first_name: string;
@@ -97,6 +98,19 @@ const ProfileLimits = () => {
     }
   };
 
+  const handleLogout = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        throw error;
+      }
+      showSuccess("Você foi desconectado com sucesso!");
+      navigate('/login'); // Redirecionar para a página de login após o logout
+    } catch (error: any) {
+      showError(`Erro ao fazer logout: ${error.message}`);
+    }
+  };
+
   if (loading || authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
@@ -168,12 +182,15 @@ const ProfileLimits = () => {
         </Card>
       </main>
 
-      <div className="w-full max-w-md mx-auto mt-4">
+      <div className="w-full max-w-md mx-auto mt-4 space-y-2">
         <Link to="/dashboard">
-          <Button variant="outline" className="w-full mt-2 border-gray-400 text-gray-700 hover:bg-gray-50 py-3 text-lg shadow-md">
+          <Button variant="outline" className="w-full border-gray-400 text-gray-700 hover:bg-gray-50 py-3 text-lg shadow-md">
             Voltar ao Painel
           </Button>
         </Link>
+        <Button onClick={handleLogout} className="w-full bg-red-600 hover:bg-red-700 text-white py-3 text-lg shadow-md flex items-center justify-center">
+          Sair <LogOut className="ml-2 h-5 w-5" />
+        </Button>
       </div>
       <MadeWithDyad />
     </div>
