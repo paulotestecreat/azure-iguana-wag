@@ -1,0 +1,301 @@
+openapi: 3.0.0
+info:
+  title: Creative Go Financeiro API
+  version: 1.0.0
+  description: API para o assistente financeiro Creative Go Financeiro via WhatsApp.
+servers:
+  - url: https://your-supabase-project-id.supabase.co/rest/v1
+    description: Supabase REST API
+  - url: https://your-supabase-project-id.supabase.co/functions/v1
+    description: Supabase Edge Functions API (para notificações WhatsApp)
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Profile:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        first_name:
+          type: string
+        last_name:
+          type: string
+        whatsapp_number:
+          type: string
+        monthly_transaction_limit:
+          type: integer
+        transactions_this_month:
+          type: integer
+        updated_at:
+          type: string
+          format: date-time
+    Transaction:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        amount:
+          type: number
+          format: float
+        description:
+          type: string
+        category_id:
+          type: string
+          format: uuid
+        transaction_date:
+          type: string
+          format: date
+        created_at:
+          type: string
+          format: date-time
+    Category:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+    Goal:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        target_amount:
+          type: number
+          format: float
+        current_amount:
+          type: number
+          format: float
+        due_date:
+          type: string
+          format: date
+        status:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+    Debt:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        total_amount:
+          type: number
+          format: float
+        paid_amount:
+          type: number
+          format: float
+        due_date:
+          type: string
+          format: date
+        creditor:
+          type: string
+        status:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+    WhatsAppNotification:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        message:
+          type: string
+        type:
+          type: string
+        sent_at:
+          type: string
+          format: date-time
+        status:
+          type: string
+paths:
+  /profiles:
+    get:
+      summary: Obter perfil do usuário logado
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Perfil do usuário
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Profile'
+    patch:
+      summary: Atualizar perfil do usuário logado
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Profile'
+      responses:
+        '200':
+          description: Perfil atualizado
+  /transactions:
+    get:
+      summary: Listar transações do usuário logado
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista de transações
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Transaction'
+    post:
+      summary: Registrar nova transação
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Transaction'
+      responses:
+        '201':
+          description: Transação criada
+  /categories:
+    get:
+      summary: Listar categorias do usuário logado
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista de categorias
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Category'
+    post:
+      summary: Criar nova categoria
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Category'
+      responses:
+        '201':
+          description: Categoria criada
+  /goals:
+    get:
+      summary: Listar metas do usuário logado
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista de metas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Goal'
+    post:
+      summary: Criar nova meta
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Goal'
+      responses:
+        '201':
+          description: Meta criada
+  /debts:
+    get:
+      summary: Listar dívidas do usuário logado
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista de dívidas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Debt'
+    post:
+      summary: Criar nova dívida
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Debt'
+      responses:
+        '201':
+          description: Dívida criada
+  /send-whatsapp-notification: # Exemplo de Edge Function
+    post:
+      summary: Enviar notificação via WhatsApp (via Edge Function)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userId:
+                  type: string
+                  format: uuid
+                message:
+                  type: string
+                type:
+                  type: string
+      responses:
+        '200':
+          description: Notificação enviada
+        '401':
+          description: Não autorizado
