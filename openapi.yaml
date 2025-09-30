@@ -31,6 +31,9 @@ components:
           type: integer
         transactions_this_month:
           type: integer
+        monthly_budget:
+          type: number
+          format: float
         updated_at:
           type: string
           format: date-time
@@ -292,10 +295,17 @@ paths:
                   format: uuid
                 message:
                   type: string
-                type:
-                  type: string
+              required:
+                - userId
+                - message
       responses:
         '200':
           description: Notificação enviada
         '401':
           description: Não autorizado
+        '400':
+          description: Requisição inválida
+        '404':
+          description: Número de WhatsApp do usuário não encontrado
+        '500':
+          description: Erro interno do servidor ou configuração do Twilio
