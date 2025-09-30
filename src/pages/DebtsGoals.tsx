@@ -2,14 +2,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { showSuccess, showError } from "@/utils/toast";
 import { supabase } from "@/integrations/supabase/client";
 import { MadeWithDyad } from "@/components/made-with-dyad";
 import { format } from "date-fns";
 import { ptBR } from 'date-fns/locale';
+import { useSupabaseAuth } from "@/integrations/supabase/supabaseAuth";
 
 interface Goal {
   id: string;
@@ -31,9 +31,11 @@ interface Debt {
 }
 
 const DebtsGoals = () => {
+  const { user, loading: authLoading } = useSupabaseAuth();
   const [goals, setGoals] = useState<Goal[]>([]);
   const [debts, setDebts] = useState<Debt[]>([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   // Form states for new goal
   const [newGoalName, setNewGoalName] = useState("");
@@ -50,17 +52,18 @@ const DebtsGoals = () => {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [user, authLoading, navigate]);
 
   const fetchData = async () => {
+    if (authLoading) return;
+
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+
     setLoading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        showError("Usuário não autenticado.");
-        return;
-      }
-
       const { data: goalsData, error: goalsError } = await supabase
         .from('goals')
         .select('*')
@@ -89,9 +92,9 @@ const DebtsGoals = () => {
   const handleAddGoal = async () => {
     setAddingGoal(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         showError("Você precisa estar logado para adicionar uma meta.");
+        navigate('/login');
         return;
       }
 
@@ -126,9 +129,9 @@ const DebtsGoals = () => {
   const handleAddDebt = async () => {
     setAddingDebt(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         showError("Você precisa estar logado para adicionar uma dívida.");
+        navigate('/login');
         return;
       }
 
@@ -162,7 +165,7 @@ const DebtsGoals = () => {
     }
   };
 
-  if (loading) {
+  if (loading || authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
         <p className="text-gray-700">Carregando dívidas e metas...</p>

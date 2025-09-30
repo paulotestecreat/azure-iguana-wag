@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import { showError } from "@/utils/toast";
@@ -8,6 +8,7 @@ import { format } from "date-fns";
 import { ptBR } from 'date-fns/locale';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { MadeWithDyad } from "@/components/made-with-dyad";
+import { useSupabaseAuth } from "@/integrations/supabase/supabaseAuth";
 
 interface Transaction {
   id: string;
@@ -19,19 +20,22 @@ interface Transaction {
 }
 
 const Transactions = () => {
+  const { user, loading: authLoading } = useSupabaseAuth();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchTransactions = async () => {
+      if (authLoading) return;
+
+      if (!user) {
+        navigate('/login');
+        return;
+      }
+
       setLoading(true);
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-          showError("Usuário não autenticado.");
-          return;
-        }
-
         const { data, error } = await supabase
           .from('transactions')
           .select(`
@@ -56,9 +60,9 @@ const Transactions = () => {
       }
     };
     fetchTransactions();
-  }, []);
+  }, [user, authLoading, navigate]);
 
-  if (loading) {
+  if (loading || authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
         <p className="text-gray-700">Carregando transações...</p>

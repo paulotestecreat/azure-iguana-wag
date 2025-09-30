@@ -1,11 +1,12 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { MadeWithDyad } from "@/components/made-with-dyad";
 import { ArrowRight, Wallet, TrendingUp, Target, Scale } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import { showError } from "@/utils/toast";
+import { useSupabaseAuth } from "@/integrations/supabase/supabaseAuth";
 
 interface DashboardData {
   totalSpent: number;
@@ -16,19 +17,22 @@ interface DashboardData {
 }
 
 const Dashboard = () => {
+  const { user, loading: authLoading } = useSupabaseAuth();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchDashboardData = async () => {
+      if (authLoading) return; // Wait for auth to load
+
+      if (!user) {
+        navigate('/login'); // Redirect if not authenticated
+        return;
+      }
+
       setLoading(true);
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-          showError("Usuário não autenticado.");
-          return;
-        }
-
         // Fetch total spent this month
         const { data: transactionsData, error: transactionsError } = await supabase
           .from('transactions')
@@ -79,9 +83,9 @@ const Dashboard = () => {
     };
 
     fetchDashboardData();
-  }, []);
+  }, [user, authLoading, navigate]);
 
-  if (loading) {
+  if (loading || authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
         <p className="text-gray-700">Carregando painel...</p>

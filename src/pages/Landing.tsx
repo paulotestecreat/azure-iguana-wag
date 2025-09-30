@@ -26,9 +26,9 @@ const Landing = () => {
           </ul>
         </div>
 
-        <Link to="/onboarding" className="w-full">
+        <Link to="/login" className="w-full"> {/* Alterado para /login */}
           <Button className="w-full bg-green-600 hover:bg-green-700 text-white text-lg py-6 rounded-lg shadow-lg transition-all duration-300 ease-in-out transform hover:scale-105">
-            Usar no WhatsApp
+            Começar Agora
           </Button>
         </Link>
         <p className="text-sm text-gray-500 mt-4">

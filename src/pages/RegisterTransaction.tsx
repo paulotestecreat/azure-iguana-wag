@@ -8,6 +8,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { showSuccess, showError } from "@/utils/toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useSupabaseAuth } from "@/integrations/supabase/supabaseAuth";
 
 interface Category {
   id: string;
@@ -15,21 +16,24 @@ interface Category {
 }
 
 const RegisterTransaction = () => {
+  const { user, loading: authLoading } = useSupabaseAuth();
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
   const [categoryId, setCategoryId] = useState<string | undefined>(undefined);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchCategories = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      if (authLoading) return;
+
       if (!user) {
-        showError("Usuário não autenticado.");
+        navigate('/login');
         return;
       }
 
+      setLoading(true);
       const { data, error } = await supabase
         .from('categories')
         .select('id, name')
@@ -40,16 +44,17 @@ const RegisterTransaction = () => {
       } else {
         setCategories(data || []);
       }
+      setLoading(false);
     };
     fetchCategories();
-  }, []);
+  }, [user, authLoading, navigate]);
 
   const handleRegisterTransaction = async () => {
     setLoading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         showError("Você precisa estar logado para registrar uma transação.");
+        navigate('/login');
         return;
       }
 
@@ -95,6 +100,14 @@ const RegisterTransaction = () => {
       setLoading(false);
     }
   };
+
+  if (loading || authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+        <p className="text-gray-700">Carregando...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">

@@ -2,11 +2,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { showSuccess, showError } from "@/utils/toast";
 import { supabase } from "@/integrations/supabase/client";
 import { MadeWithDyad } from "@/components/made-with-dyad";
+import { useSupabaseAuth } from "@/integrations/supabase/supabaseAuth";
 
 interface UserProfile {
   first_name: string;
@@ -17,6 +18,7 @@ interface UserProfile {
 }
 
 const ProfileLimits = () => {
+  const { user, loading: authLoading } = useSupabaseAuth();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [firstName, setFirstName] = useState("");
@@ -24,17 +26,19 @@ const ProfileLimits = () => {
   const [whatsappNumber, setWhatsappNumber] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchProfile = async () => {
+      if (authLoading) return;
+
+      if (!user) {
+        navigate('/login');
+        return;
+      }
+
       setLoading(true);
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-          showError("Usuário não autenticado.");
-          return;
-        }
-
         const { data, error } = await supabase
           .from('profiles')
           .select('first_name, last_name, whatsapp_number, monthly_transaction_limit, transactions_this_month')
@@ -53,14 +57,14 @@ const ProfileLimits = () => {
       }
     };
     fetchProfile();
-  }, []);
+  }, [user, authLoading, navigate]);
 
   const handleSaveProfile = async () => {
     setSaving(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         showError("Usuário não autenticado.");
+        navigate('/login');
         return;
       }
 
@@ -77,7 +81,15 @@ const ProfileLimits = () => {
       if (error) throw error;
       showSuccess("Perfil atualizado com sucesso!");
       setIsEditing(false);
-      fetchProfile(); // Re-fetch to update local state
+      // Re-fetch to update local state
+      const { data, error: refetchError } = await supabase
+        .from('profiles')
+        .select('first_name, last_name, whatsapp_number, monthly_transaction_limit, transactions_this_month')
+        .eq('id', user.id)
+        .single();
+      if (refetchError) throw refetchError;
+      setProfile(data);
+
     } catch (error: any) {
       showError(`Erro ao salvar perfil: ${error.message}`);
     } finally {
@@ -85,7 +97,7 @@ const ProfileLimits = () => {
     }
   };
 
-  if (loading) {
+  if (loading || authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
         <p className="text-gray-700">Carregando perfil...</p>
