@@ -89,7 +89,7 @@ const DebtsGoals = () => {
   const handleAddGoal = async () => {
     setAddingGoal(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } = { user: null } } = await supabase.auth.getUser();
       if (!user) {
         showError("Você precisa estar logado para adicionar uma meta.");
         return;
@@ -126,7 +126,7 @@ const DebtsGoals = () => {
   const handleAddDebt = async () => {
     setAddingDebt(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } = { user: null } } = await supabase.auth.getUser();
       if (!user) {
         showError("Você precisa estar logado para adicionar uma dívida.");
         return;
