@@ -4,16 +4,14 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Landing from "./pages/Landing";
-import Onboarding from "./pages/Onboarding";
 import Dashboard from "./pages/Dashboard";
 import RegisterTransaction from "./pages/RegisterTransaction";
 import Transactions from "./pages/Transactions";
-import DebtsGoals from "./pages/DebtsGoals";
-import ProfileLimits from "./pages/ProfileLimits";
-import AdminDashboard from "./pages/AdminDashboard";
+import Categories from "./pages/Categories"; // Nova importação
+import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
-import Login from "./pages/Login"; // Importar a nova página de Login
-import { useSupabaseAuth } from "./integrations/supabase/supabaseAuth"; // Importar o hook de autenticação
+import Login from "./pages/Login";
+import { useSupabaseAuth } from "./integrations/supabase/supabaseAuth";
 
 const queryClient = new QueryClient();
 
@@ -32,7 +30,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     return <Navigate to="/login" replace />;
   }
 
-  return <>{children}</>;
+  return <>{children}</ProtectedRoute>;
 };
 
 const App = () => (
@@ -43,15 +41,13 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Landing />} />
-          <Route path="/login" element={<Login />} /> {/* Rota para a página de Login */}
-          <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
+          <Route path="/login" element={<Login />} />
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/register-transaction" element={<ProtectedRoute><RegisterTransaction /></ProtectedRoute>} />
           <Route path="/transactions" element={<ProtectedRoute><Transactions /></ProtectedRoute>} />
-          <Route path="/debts-goals" element={<ProtectedRoute><DebtsGoals /></ProtectedRoute>} />
-          <Route path="/profile-limits" element={<ProtectedRoute><ProfileLimits /></ProtectedRoute>} />
-          <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          <Route path="/categories" element={<ProtectedRoute><Categories /></ProtectedRoute>} /> {/* Nova rota */}
+          <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+          {/* ADICIONE TODAS AS ROTAS PERSONALIZADAS ACIMA DA ROTA CATCH-ALL "*" */}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
